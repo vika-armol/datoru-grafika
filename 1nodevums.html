@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1.uzdevums</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>1. uzdevums</h2>
+    <p style="width: 800px; display: flex; align-items: center;">Izstrādāt datorprogrammu, kas uzzīmē fraktāli, atklāti definējot tā līdzību pašam ar sevi dažādos detalizācijas līmeņos (Mandelbrota kopa un tamlīdzīgas neder).</p>
+    
+    <!-- Canvas elements, kurā tiks zīmēts fraktālis -->
+    <canvas width="800" height="400" id="canvas" style="border: 1px solid #000000"></canvas>
+
+    <script>
+        const canva = document.getElementById("canvas");
+        // Canvas 2d konteksts, kas ļaus zīmēt līnijas un kopumā figūras
+        const ctx = canva.getContext("2d");
+
+        /* ctx.beginPath();
+        ctx.moveTo(400, 60);
+        ctx.lineTo(250, 260);
+        ctx.lineTo(540, 260);
+        ctx.lineTo(400, 60);
+        ctx.stroke(); */
+
+        // Funkcija, kas zīmē vienu no sniegpārslas pusēm
+        function drawSnowflake(x1, y1, x2, y2, depth) {
+
+            // Kad dziļums ir 0, tad viena trijstūra mala vairs netiek sadalīta mazākās daļās
+            // un tiek uzzīmēta pēdējā mala starp punktiem
+            if (depth == 0) {
+                // Sniegpārslas kontūra paliek zilā krāsā
+                ctx.strokeStyle = "blue";
+
+                // Zīmē sniegpārslu
+                ctx.beginPath();
+                ctx.moveTo(x1, y1);
+                ctx.lineTo(x2, y2);
+                ctx.stroke();
+
+                return;
+            }
+
+            // Aprēķina pirmo punktu, kas sadala trijstūra malu trīs vienādās daļās 
+            const point13x1 = x1 + (x2 - x1) / 3;
+            const point23y1 = y1 + (y2 - y1) / 3;
+
+            // Aprēķina otro punktu, kas sadala trijstūra malu trīs vienādās daļās
+            const point13x2 = x1 + (2 * (x2 - x1)) / 3;
+            const point23y2 = y1 + (2 * (y2 - y1)) / 3;
+
+            // Aprēķina vektoru starp iegūtajiem punktiem koda rindiņās 55 - 60, kas spēs noteikt jaunā trijstūra
+            // virsotnes koordinātās
+            const virsotneXKoordinata = point13x2 - point13x1;
+            const virsotneYKoordinata = point23y2 - point23y1;
+
+            // Aprēķina jaunā vienādmalu trijstūra virsotni virs trijstūra malas, izmantojot punktus,
+            // kas tika aprēķināti koda rindiņās 55 - 60.
+            const virsotneX = point13x1 + (virsotneXKoordinata / 2) - (Math.sqrt(3) / 2) * virsotneYKoordinata;
+            const virsotneY = point23y1 + (virsotneYKoordinata / 2) + (Math.sqrt(3) / 2) * virsotneXKoordinata;
+
+            // Rekursīvi izsauc funkciju 'drawSnowflake', kas sadala sākotnējo malu 4 daļās un aizvieto trijstūra malu 
+            // ar sniegpārslas fraktāli
+            drawSnowflake(x1, y1, point13x1, point23y1, depth - 1);
+            drawSnowflake(point13x1, point23y1, virsotneX, virsotneY, depth - 1);
+            drawSnowflake(virsotneX, virsotneY, point13x2, point23y2, depth - 1);
+            drawSnowflake(point13x2, point23y2, x2, y2, depth - 1);
+        }
+
+        // Nosaka cik dziļa un detalizēta paliek sniegpārsla
+        const depth = 5;
+
+        // Tiek izsaukta funkcija 'drawSnowflake' trīs reizes, jo sniegpārsla sākumā ir trijstūris
+        drawSnowflake(400, 60, 250, 260, depth);
+        drawSnowflake(250, 260, 540, 260, depth);
+        drawSnowflake(540, 260, 400, 60, depth);
+    </script>
+</body>
+
+</html>

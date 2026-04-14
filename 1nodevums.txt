@@ -1,0 +1,5 @@
+Programmas palaišana:
+    Ņemot vērā, ka darbs ir veidots JavaScript valodā, izvēlētā uzdevuma apraksts un programmas koda rezultāts ir redzams iekš GitHub pages:
+        https://vika-armol.github.io/datoru-grafika/1nodevums.html
+
+Pats programmas kods ir pieejams failā '1nodevums.html'.
