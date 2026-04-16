@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2.nodevums</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>2.nodevums</h2>
+    <p style="width: 800px; display: flex; align-items: center;">3d) Izstrādāt datorprogrammu, kas realizē lekcijā
+        izklāstīto daudzstūra aizpildīšanas algoritmu.</p>
+
+    <canvas width="800" height="400" id="canvas" style="border: 1px solid #000000"></canvas>
+
+    <script>
+        const canva = document.getElementById("canvas");
+        const ctx = canva.getContext("2d");
+
+        ctx.strokeStyle = "orange";
+
+        ctx.beginPath();
+        ctx.moveTo(400, 60);
+        ctx.lineTo(360, 120);
+        ctx.lineTo(280, 120);
+        ctx.lineTo(330, 180);
+        ctx.lineTo(300, 250);
+        ctx.lineTo(400, 200);
+        ctx.lineTo(500, 250);
+        ctx.lineTo(470, 180);
+        ctx.lineTo(520, 120);
+        ctx.lineTo(440, 120);
+        ctx.lineTo(400, 60);
+        ctx.stroke();
+
+        const virsotnes = [[400, 60], [360, 120], [280, 120], [330, 180],
+        [300, 250], [400, 200], [500, 250], [470, 180],
+        [520, 120], [440, 120]];
+
+        var minY = 60;
+        var maxY = 250;
+
+        for (let y = minY; y <= maxY; y++) {
+            let krustpunkti = [];
+
+            for (let i = 0; i < virsotnes.length; i++) {
+                let sakumaVirsotne = virsotnes[i];
+                let beiguVirsotne = virsotnes[(i + 1) % virsotnes.length];
+
+                let x1 = sakumaVirsotne[0];
+                let x2 = beiguVirsotne[0];
+
+                let y1 = sakumaVirsotne[1];
+                let y2 = beiguVirsotne[1];
+
+                if (y1 === y2) {
+                    continue;
+                }
+
+                if ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
+                    let x = x1 + (y - y1) * (x2 - x1) / (y2 - y1);
+
+                    krustpunkti.push(x);
+                }
+            }
+
+            for (let j = 0; j < krustpunkti.length; j++) {
+                for (let m = 0; m < krustpunkti.length - j - 1; m++) {
+                    if (krustpunkti[m] > krustpunkti[m + 1]) {
+                        var temp = krustpunkti[m];
+                        krustpunkti[m] = krustpunkti[m + 1];
+                        krustpunkti[m + 1] = temp;
+                    }
+                }
+            }
+
+            for (let n = 0; n < krustpunkti.length - 1; n += 2) {
+                let sakumaX = krustpunkti[n];
+                let beiguX = krustpunkti[n + 1];
+
+                ctx.strokeStyle = "orange";
+
+                ctx.beginPath();
+                ctx.moveTo(sakumaX, y);
+                ctx.lineTo(beiguX, y);
+                ctx.stroke();
+            }
+        }
+    </script>
+</body>
+
+</html>
