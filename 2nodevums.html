@@ -19,14 +19,18 @@
     <p style="width: 800px; display: flex; align-items: center;">3d) Izstrādāt datorprogrammu, kas realizē lekcijā
         izklāstīto daudzstūra aizpildīšanas algoritmu.</p>
 
+    <!-- Canvas elements, kurā tiks zīmēta iekrāsotā zvaigzne -->
     <canvas width="800" height="400" id="canvas" style="border: 1px solid #000000"></canvas>
 
     <script>
         const canva = document.getElementById("canvas");
+        // Canvas 2d konteksts, kas ļaus zīmēt līnijas un kopumā figūras
         const ctx = canva.getContext("2d");
 
+        // Zvaignzes kontūras krāsa - oranža
         ctx.strokeStyle = "orange";
 
+        // Zvaigznes kontūras koordinātas
         ctx.beginPath();
         ctx.moveTo(400, 60);
         ctx.lineTo(360, 120);
@@ -41,57 +45,132 @@
         ctx.lineTo(400, 60);
         ctx.stroke();
 
+        // Zvaigznes koordinātas tiek ieliktas masīvā 'virsotnes', kur katrs masīva elements
+        // ir [x, y] koordināta
         const virsotnes = [[400, 60], [360, 120], [280, 120], [330, 180],
         [300, 250], [400, 200], [500, 250], [470, 180],
         [520, 120], [440, 120]];
 
-        var minY = 60;
-        var maxY = 250;
+        // Masīvs 'malas' glabā visas daudzstūra malas 
+        let malas = [];
 
-        for (let y = minY; y <= maxY; y++) {
-            let krustpunkti = [];
+        // Iet cauri visām zvaigznes virsotnēm, lai izveidotu daudzstūra malas
+        for (let i = 0; i < virsotnes.length; i++) {
+            // Iegūst sākuma un beigu virsotni malai
+            let sakumaVirsotne = virsotnes[i];
+            let beiguVirsotne = virsotnes[(i + 1) % virsotnes.length];
 
-            for (let i = 0; i < virsotnes.length; i++) {
-                let sakumaVirsotne = virsotnes[i];
-                let beiguVirsotne = virsotnes[(i + 1) % virsotnes.length];
+            // Iegūst sākuma un beigu virsotnes x koordinātas
+            let x1 = sakumaVirsotne[0];
+            let x2 = beiguVirsotne[0];
 
-                let x1 = sakumaVirsotne[0];
-                let x2 = beiguVirsotne[0];
+            // Iegūst sākuma un beigu virsotnes y koordinātas
+            let y1 = sakumaVirsotne[1];
+            let y2 = beiguVirsotne[1];
 
-                let y1 = sakumaVirsotne[1];
-                let y2 = beiguVirsotne[1];
+            // Ja mala ir horizontāla mala, tad tā tiek izlaista/noignorēta
+            if (y1 === y2) {
+                continue;
+            }
 
-                if (y1 === y2) {
-                    continue;
+            // Iegūstam daudzstūra malas maksimālo un minimālo y koordinātu
+            // jeb nosakām malas y robežas
+            let minY = Math.min(y1, y2);
+            let maxY = Math.max(y1, y2);
+
+            // Nosakām sākuma koordinātu x
+            let x;
+            if (y1 < y2) {
+                x = x1;
+            } else {
+                x = x2
+            }
+
+            // Iegūstam cik daudz x mainās, palielinot y par 1, jeb tiek iegūts malas slīpums, lai aprēķinātu
+            // krustpunktus nākamajai rindai
+            let pieaugumsX = (x2 - x1) / (y2 - y1);
+
+            // Saglabā daudzstūra malu masīvā 'malas'
+            malas.push({ minY, maxY, x, pieaugumsX });
+        }
+
+        // Izmantojot burbuļa sakārtošanas metodi, daudzstūra malas tiek sakārtotas pēc minY
+        for (let j = 0; j < malas.length; j++) {
+            for (let m = 0; m < malas.length - j - 1; m++) {
+                if (malas[m].minY > malas[m + 1].minY) {
+                    var temp = malas[m];
+                    malas[m] = malas[m + 1];
+                    malas[m + 1] = temp;
                 }
+            }
+        }
 
-                if ((y1 <= y && y < y2) || (y2 <= y && y < y1)) {
-                    let x = x1 + (y - y1) * (x2 - x1) / (y2 - y1);
+        // Masīvs 'aktivasMalas' glabā visas tās daudzstūra malas, kuras konkrētajā brīdī šķērso
+        // attiecīgo horizontālo līniju
+        let aktivasMalas = [];
 
-                    krustpunkti.push(x);
+        // Y maksimālā un minimālā robeža starp kurām tiek veikta daudzstūra aizpildīšana
+        let minY = 60;
+        let maxY = 250;
+
+        // Pārvietojas pa katru horizontālo rindu, kur katra y vērtība atbilst vienai horizontālai līnijai
+        for (let y = minY; y <= maxY; y++) {
+            // Iet cauri visām daudzstūra malām no masīva 'malas' un pievieno malas masīvā 'aktivasMalas',
+            // kas sākas attiecīgajā y rindā
+            for (let i = 0; i < malas.length; i++) {
+                if (malas[i].minY === y) {
+                    aktivasMalas.push({
+                        maxY: malas[i].maxY,
+                        x: malas[i].x,
+                        pieaugumsX: malas[i].pieaugumsX
+                    });
                 }
             }
 
-            for (let j = 0; j < krustpunkti.length; j++) {
-                for (let m = 0; m < krustpunkti.length - j - 1; m++) {
-                    if (krustpunkti[m] > krustpunkti[m + 1]) {
-                        var temp = krustpunkti[m];
-                        krustpunkti[m] = krustpunkti[m + 1];
-                        krustpunkti[m + 1] = temp;
+            // Masīvs 'tempAktivasMalas' tiek lietots, lai saglabātu tikai tās daudzstūra malas, kuras
+            // joprojām krusto attiecīgo y līniju
+            let tempAktivasMalas = [];
+
+            // Tiek paturētas tikai tās malas masīvā 'tempAktivasMalas', kurām pašreizējais y vēl nav sasniedzis maxY
+            for (let i = 0; i < aktivasMalas.length; i++) {
+                if (y < aktivasMalas[i].maxY) {
+                    tempAktivasMalas.push(aktivasMalas[i]);
+                }
+            }
+
+            // Tiek atjaunots aktīvo malu masīvs 'aktivasMalas', izslēdzot malas, kas vairs nekrusto pašreizējo y rindu
+            aktivasMalas = tempAktivasMalas;
+
+            // Izmantojot burbuļa sakārtošanas metodi, krustpunkti tiek sakārtoti pēc x koordinātas
+            for (let j = 0; j < aktivasMalas.length; j++) {
+                for (let m = 0; m < aktivasMalas.length - j - 1; m++) {
+                    if (aktivasMalas[m].x > aktivasMalas[m + 1].x) {
+                        var temp = aktivasMalas[m];
+                        aktivasMalas[m] = aktivasMalas[m + 1];
+                        aktivasMalas[m + 1] = temp;
                     }
                 }
             }
 
-            for (let n = 0; n < krustpunkti.length - 1; n += 2) {
-                let sakumaX = krustpunkti[n];
-                let beiguX = krustpunkti[n + 1];
+            // Tiek apstrādāti x krustpunktu pāri un aizpildītas līnijas starp tiem
+            for (let n = 0; n + 1 < aktivasMalas.length; n += 2) {
+                // Iegūst sākuma un beigu krustpunktus ar malām 
+                let sakumaX = aktivasMalas[n].x;
+                let beiguX = aktivasMalas[n + 1].x;
 
+                // Daudzstūra aizpildīšanas krāsa
                 ctx.strokeStyle = "orange";
 
+                // Tiek zīmēta horizontāla līnija starp krustpunktiem
                 ctx.beginPath();
                 ctx.moveTo(sakumaX, y);
                 ctx.lineTo(beiguX, y);
                 ctx.stroke();
+            }
+
+            // Tiek veikta krustpunktu koordinātu atjaunināšana nākamajai y līnijai
+            for (let i = 0; i < aktivasMalas.length; i++) {
+                aktivasMalas[i].x += aktivasMalas[i].pieaugumsX;
             }
         }
     </script>
