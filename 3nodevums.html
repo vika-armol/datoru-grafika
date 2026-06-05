@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="lv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3. nodevums</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        canvas {
+            width: auto;
+            height: 500px;
+            border: 1px solid black;
+        }
+
+        .container {
+            display: flex;
+            gap: 70px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>3. nodevums</h2>
+    <p style="align-items: center;">9a) Izstrādāt datorprogrammu, kas realizē kontrasta palielināšanas transformāciju.
+    </p>
+
+    <div class="container">
+        <div>
+            <h3>Attēls pirms kontrasta palielināšanas:</h3>
+            <!-- Canvas elements, kurā tiek parādīts oriģinālais attēls -->
+            <canvas id="originalCanvas"></canvas>
+        </div>
+
+        <div>
+            <h3>Attēls pēc kontrasta palielināšanas:</h3>
+            <!-- Canvas elements, kurā tiek parādīts rezultāta attēls -->
+            <canvas id="resultCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Satur oriģinālo attēlu -->
+    <img id="attels" src="3nodevums.png" hidden>
+
+    <script>
+        // Iegūst attēlu no HTML
+        const img = document.getElementById("attels");
+
+        // Iegūst oriģinālā attēla canvas elementu un tā 2D kontekstu
+        const originalCanvas = document.getElementById("originalCanvas");
+        const originalCtx = originalCanvas.getContext("2d");
+
+        // Iegūst rezultāta attēla canvas elementu un tā 2D kontekstu
+        const resultCanvas = document.getElementById("resultCanvas");
+        const resultCtx = resultCanvas.getContext("2d");
+
+        // Funkcija tiek izpildīta, kad oriģinālais attēls ir ielādējies
+        img.onload = function () {
+
+            // Oriģinālā attēla canvas izmērs tiek pielāgots no attēla izmēra
+            originalCanvas.width = img.width;
+            originalCanvas.height = img.height;
+
+            // Rezultāta attēla canvas izmērs tiek pielāgots no attēla izmēra
+            resultCanvas.width = img.width;
+            resultCanvas.height = img.height;
+
+            // Oriģinālais attēls tiek uzzīmēts uz oriģinālā canvas
+            originalCtx.drawImage(img, 0, 0);
+
+            // Tiek iegūti oriģinālā attēla pikseļu dati
+            const imageData = originalCtx.getImageData(0, 0, img.width, img.height);
+
+            // Masīvs, kas satur visu pikseļu RGBA vērtības (Red, Green, Blue, Alpha)
+            const pixels = imageData.data;
+
+            // Sākotnējās minimālās un maksimālās krāsu kanālu vērtības
+            let minSarkans = 255;
+            let maxSarkans = 0;
+
+            let minZals = 255;
+            let maxZals = 0;
+
+            let minZils = 255;
+            let maxZils = 0;
+
+            // Tiek pārbaudīts katra oriģinālā attēla pikselis
+            for (let i = 0; i < pixels.length; i += 4) {
+
+                // Tiek meklēta minimālā un maksimālā sarkanā vērtība
+                if (pixels[i] < minSarkans) minSarkans = pixels[i];
+                if (pixels[i] > maxSarkans) maxSarkans = pixels[i];
+
+                // Tiek meklēta minimālā un maksimālā zaļā vērtība
+                if (pixels[i + 1] < minZals) minZals = pixels[i + 1];
+                if (pixels[i + 1] > maxZals) maxZals = pixels[i + 1];
+
+                // Tiek meklēta minimālā un maksimālā zilā vērtība
+                if (pixels[i + 2] < minZils) minZils = pixels[i + 2];
+                if (pixels[i + 2] > maxZils) maxZils = pixels[i + 2];
+            }
+
+            // Aprēķina katra krāsu kanāla diapazonu, kas tiks izmantots kontrasta palielināšanas transformācijā
+            const diapazonsSarkanam = maxSarkans - minSarkans;
+            const diapazonsZalam = maxZals - minZals;
+            const diapazonsZilam = maxZils - minZils;
+
+            // Izveido jaunu rezultāta attēla datu objektu, kurā tiks saglabāti transformētie pikseļu dati
+            const resultImageData = resultCtx.createImageData(img.width, img.height);
+
+            // Masīvs, kas satur rezultāta attēla pikseļu RGBA vērtības (Red, Green, Blue, Alpha)
+            const resultPixels = resultImageData.data;
+
+            // Tiek pārbaudīts katrs pikselis un katram RGB kanālam tiek piemērota kontrasta palielināšanas transformācija,
+            // izmantojot iepriekš aprēķinātās minimālās un maksimālās vērtības
+            for (let i = 0; i < pixels.length; i += 4) {
+
+                // Tiek iegūtas pikseļa RGB vērtības
+                const sarkans = pixels[i];
+                const zals = pixels[i + 1];
+                const zils = pixels[i + 2];
+
+                let newSarkans, newZals, newZils;
+
+                // Tiek piemērota kontrasta palielināšanas transformācija katram krāsu kanālam. Ja diapazons ir 0,
+                // tad visas kanāla vērtības ir vienādas, tāpēc kontrastu nav iespējams palielināt un vērtība
+                // tiek saglabāta. Ja diapazons nav 0, tad tiek piemērota kontrasta palielināšanas transformācija
+                if (diapazonsSarkanam === 0) {
+                    newSarkans = sarkans;
+                } else {
+                    newSarkans = ((sarkans - minSarkans) * 255) / diapazonsSarkanam;
+                }
+
+                if (diapazonsZalam === 0) {
+                    newZals = zals;
+                } else {
+                    newZals = ((zals - minZals) * 255) / diapazonsZalam;
+                }
+
+                if (diapazonsZilam === 0) {
+                    newZils = zils;
+                } else {
+                    newZils = ((zils - minZils) * 255) / diapazonsZilam;
+                }
+
+                // Ja jaunās krāsu vērtības pārsniedz 0-255 diapazonu,
+                // tās tiek ierobežotas intervālā [0, 255], lai nodrošinātu derīgas RGB vērtības
+                newSarkans = Math.max(0, Math.min(255, Math.round(newSarkans)));
+                newZals = Math.max(0, Math.min(255, Math.round(newZals)));
+                newZils = Math.max(0, Math.min(255, Math.round(newZils)));
+
+                // Saglabā jaunās RGB vērtības rezultāta attēlā, saglabājot oriģinālo alfa kanāla vērtību
+                resultPixels[i] = newSarkans;
+                resultPixels[i + 1] = newZals;
+                resultPixels[i + 2] = newZils;
+                resultPixels[i + 3] = pixels[i + 3];
+            }
+
+            // Rezultāta attēls tiek attēlots canvas logā
+            resultCtx.putImageData(resultImageData, 0, 0);
+        };
+    </script>
+</body>
+
+</html>

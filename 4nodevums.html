@@ -1,0 +1,274 @@
+﻿<!DOCTYPE html>
+<html lang="lv">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Segmentēšana pēc RGB histogrammām</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .imageCanvas {
+            width: auto;
+            height: 500px;
+            border: 1px solid black;
+        }
+
+        .histogramCanvas {
+            border: 1px solid black;
+        }
+
+        .container {
+            display: flex;
+            gap: 70px;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>4. nodevums</h2>
+    <p style="align-items: center;">11a) Izstrādāt datorprogrammu attēlu sliekšņošanai, sliekšņa vērtību nosakot pēc
+        histogrammas.</p>
+
+    <div class="container">
+        <div>
+            <h3>Oriģinālais attēls:</h3>
+            <!-- Canvas elements, kurā tiek parādīts oriģinālais attēls -->
+            <canvas id="originalCanvas" class="imageCanvas"></canvas>
+        </div>
+
+        <div>
+            <h3>Sarkanā histogramma:</h3>
+            <!-- Canvas elements, kurā tiek attēlota sarkanā kanāla histogramma -->
+            <canvas id="histogramR" class="histogramCanvas" width="300" height="250"></canvas>
+
+            <h3>Zaļā histogramma:</h3>
+            <!-- Canvas elements, kurā tiek attēlota zaļā kanāla histogramma -->
+            <canvas id="histogramG" class="histogramCanvas" width="300" height="250"></canvas>
+
+            <h3>Zilā histogramma:</h3>
+            <!-- Canvas elements, kurā tiek attēlota zilā kanāla histogramma -->
+            <canvas id="histogramB" class="histogramCanvas" width="300" height="250"></canvas>
+
+            <!-- Šajā elementā tiek attēlota informācija par atrastajiem sliekšņiem no sarkanās, 
+             zilās un zaļās histogrammas-->
+            <div id="slieksnaInfo"></div>
+        </div>
+
+        <div>
+            <h3>Segmentētais attēls:</h3>
+            <!-- Canvas elements, kurā tiek parādīts rezultāta attēls -->
+            <canvas id="resultCanvas" class="imageCanvas"></canvas>
+        </div>
+    </div>
+
+    <!-- Satur oriģinālo attēlu -->
+    <img id="attels" src="4nodevums.png" hidden>
+
+    <script>
+        // Iegūst attēlu no HTML
+        const img = document.getElementById("attels");
+
+        // Iegūst oriģinālā attēla canvas elementu un tā 2D kontekstu
+        const originalCanvas = document.getElementById("originalCanvas");
+        const originalCtx = originalCanvas.getContext("2d");
+
+        // Iegūst rezultāta attēla canvas elementu un tā 2D kontekstu
+        const resultCanvas = document.getElementById("resultCanvas");
+        const resultCtx = resultCanvas.getContext("2d");
+
+        // Iegūst sarkanās histogrammas canvas elementu un tā 2D kontekstu
+        const histogramR = document.getElementById("histogramR");
+        const histogramRCtx = histogramR.getContext("2d");
+
+        // Iegūst zaļās histogrammas canvas elementu un tā 2D kontekstu
+        const histogramG = document.getElementById("histogramG");
+        const histogramGCtx = histogramG.getContext("2d");
+
+        // Iegūst zilās histogrammas canvas elementu un tā 2D kontekstu
+        const histogramB = document.getElementById("histogramB");
+        const histogramBCtx = histogramB.getContext("2d");
+
+        // Iegūst HTML elementu, kurā tiks attēlota informācija par atrastajiem sliekšņiem
+        const slieksnaInfo = document.getElementById("slieksnaInfo");
+
+        // Funkcija 'atrodSlieksni' nosaka sliekšņa vērtību no sarkanās, zilās un zaļās histogrammas
+        function atrodSlieksni(histogram) {
+            let pirmaisMaksimums = 0;
+
+            // Tiek meklēta histogrammas pirmā lielākā vērtība (vai vienkārši lielākā vērtība)
+            for (let i = 1; i < 256; i++) {
+                if (histogram[i] > histogram[pirmaisMaksimums]) {
+                    pirmaisMaksimums = i;
+                }
+            }
+
+            let otraisMaksimums = 0;
+            let bestScore = -1;
+
+            // Tiek meklēts otrais maksimums, ņemot vērā gan histogrammas vērtību, gan attālumu no pirmā maksimuma
+            for (let i = 0; i < 256; i++) {
+                const attalums = Math.abs(i - pirmaisMaksimums);
+                const vertiba = histogram[i] * attalums;
+
+                if (vertiba > bestScore) {
+                    bestScore = vertiba;
+                    otraisMaksimums = i;
+                }
+            }
+
+            // Tiek noteiktas robežas starp pirmo un otro histogrammas maksimālajām vērtībām
+            let kreisaisMax = Math.min(pirmaisMaksimums, otraisMaksimums);
+            let labaisMax = Math.max(pirmaisMaksimums, otraisMaksimums);
+
+            // Tiek meklēta histogrammas minimālā vērtība starp abiem maksimumiem
+            let min = kreisaisMax;
+
+            for (let i = kreisaisMax; i <= labaisMax; i++) {
+                if (histogram[i] < histogram[min]) min = i;
+            }
+
+            // Tiek saglabāta atrastā minimuma vērtība histogrammā
+            const minVertiba = histogram[min];
+
+            // Tiek noteikta pieļaujamā novirze no minimuma vērtības, lai atrastu visu ieplakas apgabalu
+            const novirze = Math.max(1, Math.floor(minVertiba * 0.2));
+
+            // Tiek meklēta ieplakas kreisā robeža
+            let ieplakasKreisaRob = min;
+            while (ieplakasKreisaRob > kreisaisMax && histogram[ieplakasKreisaRob - 1] <= minVertiba + novirze) {
+                ieplakasKreisaRob--;
+            }
+
+            // Tiek meklēta ieplakas labā robeža
+            let ieplakasLabaRob = min;
+            while (ieplakasLabaRob < labaisMax && histogram[ieplakasLabaRob + 1] <= minVertiba + novirze) {
+                ieplakasLabaRob++;
+            }
+
+            // Atgriež atrasto slieksni, kas tika izvēlēts no atrastās ieplakas centra punkta
+            return Math.round((ieplakasKreisaRob + ieplakasLabaRob) / 2);
+        }
+
+        // Funkcija 'zimeHistogrammu' uzzīmē histogrammu un attēlo atrasto slieksni
+        function zimeHistogrammu(ctx, histogram, color, slieksnis) {
+            const width = 300;
+            const height = 250;
+
+            // Atrod histogrammas lielāko vērtību, lai histogrammu varētu proporcionāli attēlot canvas elementā
+            const maxHistSkaits = Math.max(...histogram);
+
+            // Tiek uzzīmēti histogrammas stabiņi
+            for (let i = 0; i < 256; i++) {
+                // Tiek noteikts stabiņu augstums
+                const stabinaAugstums = histogram[i] / maxHistSkaits * height;
+
+                // Katrai RGB vērtībai tiek uzzīmēts histogrammas stabiņš
+                ctx.fillStyle = color;
+                ctx.fillRect(i * (width / 256), height - stabinaAugstums, width / 256, stabinaAugstums);
+            }
+
+            // Tiek uzzīmēta vertikāla līnija, kas norāda atrasto slieksni histogrammā
+            ctx.strokeStyle = "black";
+            ctx.beginPath();
+            ctx.moveTo(slieksnis * (width / 256), 0);
+            ctx.lineTo(slieksnis * (width / 256), height);
+            ctx.stroke();
+        }
+
+        // Funkcija tiek izpildīta, kad oriģinālais attēls ir ielādējies
+        img.onload = function () {
+            // Oriģinālā attēla canvas izmērs tiek pielāgots no oriģinālā attēla izmēra
+            originalCanvas.width = img.width;
+            originalCanvas.height = img.height;
+
+            // Rezultāta attēla canvas izmērs tiek pielāgots no oriģinālā attēla izmēra
+            resultCanvas.width = img.width;
+            resultCanvas.height = img.height;
+
+            // Oriģinālais attēls tiek uzzīmēts uz canvas
+            originalCtx.drawImage(img, 0, 0);
+
+            // Tiek iegūti oriģinālā attēla pikseļu dati
+            const imageData = originalCtx.getImageData(0, 0, img.width, img.height);
+
+            // Masīvs, kas satur visu pikseļu RGBA vērtības (Red, Green, Blue, Alpha)
+            const pixels = imageData.data;
+
+            // Tiek izveidoti masīvi katra RGB krāsu kanāla histogrammai
+            const histR = new Array(256).fill(0);
+            const histG = new Array(256).fill(0);
+            const histB = new Array(256).fill(0);
+
+            // Tiek aprēķināts katras RGB vērtības biežums attēlā
+            for (let i = 0; i < pixels.length; i += 4) {
+                histR[pixels[i]]++;
+                histG[pixels[i + 1]]++;
+                histB[pixels[i + 2]]++;
+            }
+
+            // Katram krāsu kanālam tiek noteikts slieksnis, izmantojot funkciju 'atrodSlieksni' un
+            // izveidoto histogrammu
+            const sarkanaisSlieksnis = atrodSlieksni(histR);
+            const zaļaisSlieksnis = atrodSlieksni(histG);
+            const zilaisSlieksnis = atrodSlieksni(histB);
+
+            // Tiek attēlotas atrastās sliekšņu vērtības
+            slieksnaInfo.innerHTML =
+                `<h3>Atrastie sliekšņi:</h3>
+
+                <p>TR (Sarkanais slieksnis) = ${sarkanaisSlieksnis} (${(sarkanaisSlieksnis / 255).toFixed(3)})</p>
+                <p>TG (Zaļais slieksnis) = ${zaļaisSlieksnis} (${(zaļaisSlieksnis / 255).toFixed(3)})</p>
+                <p>TB (Zilais slieksnis) = ${zilaisSlieksnis} (${(zilaisSlieksnis / 255).toFixed(3)})</p>
+                `;
+
+            // Izmantojot funkciju 'zimeHistogrammu' tiek uzzīmētas RGB histogrammas
+            zimeHistogrammu(histogramRCtx, histR, "red", sarkanaisSlieksnis);
+            zimeHistogrammu(histogramGCtx, histG, "green", zaļaisSlieksnis);
+            zimeHistogrammu(histogramBCtx, histB, "blue", zilaisSlieksnis);
+
+            // Izveido jaunu attēla datu objektu rezultāta attēlam
+            const resultData = resultCtx.createImageData(img.width, img.height);
+
+            // Masīvs, kas satur rezultāta attēla pikseļu RGBA vērtības (Red, Green, Blue, Alpha)
+            const resultPixels = resultData.data;
+
+            // Katrs oriģinālā attēla pikselis tiek klasificēts vai nu kā attēla objekts, vai nu kā attēla fons
+            for (let i = 0; i < pixels.length; i += 4) {
+                // Tiek iegūtas pikseļa RGB vērtības
+                const R = pixels[i];
+                const G = pixels[i + 1];
+                const B = pixels[i + 2];
+
+                // Pārbauda, vai attiecīgais pikselis pārsniedz visus atrastos sliekšņus
+                const isObject = R > sarkanaisSlieksnis && G > zaļaisSlieksnis && B > zilaisSlieksnis;
+
+                // Ja isObject vērtība ir true, tad pikselis segmentētajā attēlā ir objekts un tam tiek piešķirta
+                // baltā krāsa. Ja isObject vērtība ir false, tad pikselis segmentētajā attēlā ir fons un tam tiek
+                // piešķirta melnā krāsa.
+                let value;
+
+                if (isObject) {
+                    value = 255;
+                } else {
+                    value = 0;
+                }
+
+                // Saglabā segmentētā pikseļa vērtību rezultāta attēlā
+                resultPixels[i] = value;
+                resultPixels[i + 1] = value;
+                resultPixels[i + 2] = value;
+                resultPixels[i + 3] = 255;
+            }
+
+            // Rezultāta attēls tiek attēlots canvas logā
+            resultCtx.putImageData(resultData, 0, 0);
+        };
+    </script>
+</body>
+
+</html>

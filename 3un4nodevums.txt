@@ -1,0 +1,7 @@
+Programmas palaišana:
+    Ņemot vērā, ka darbs ir veidots JavaScript valodā, izvēlētā uzdevuma apraksts un programmas koda rezultāts ir redzams iekš GitHub pages:
+        3. nodevums: https://vika-armol.github.io/datoru-grafika/3nodevums.html
+        4. nodevums: https://vika-armol.github.io/datoru-grafika/4nodevums.html 
+
+Programmas kodi ir pieejami failos '3nodevums.html' un '4nodevums.html'.
+Papildus ir pieejami divi attēli, kas tika izmantoti uzdevumos, ar attiecīgiem nosaukumiem '3nodevums.png' un '4nodevums.png'.
